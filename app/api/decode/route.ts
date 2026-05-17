@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { withX402 } from "x402-next";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-export async function POST(req: NextRequest) {
+const handler = async (req: NextRequest) => {
   const body = await req.json();
   const { walletAddress, txHash, amount, fromChain, toChain } = body;
 
-  // Fetch wallet history from Nansen
   let walletHistory: { transactions?: unknown[] } | null = null;
   try {
     const chain = fromChain || "base";
@@ -74,4 +74,14 @@ ${historyText}`,
       };
 
   return NextResponse.json(result);
-}
+};
+
+export const POST = withX402(
+  handler,
+  process.env.WALLET_ADDRESS as `0x${string}`,
+  {
+    price: "$0.30",
+    network: "base",
+    config: { description: "Whale Intent Decode" },
+  }
+);

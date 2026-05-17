@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withX402 } from "x402-next";
 
-export async function GET(req: NextRequest) {
+const handler = async (req: NextRequest) => {
   const chain = req.nextUrl.searchParams.get("chain") || "base";
 
   try {
@@ -29,4 +30,10 @@ export async function GET(req: NextRequest) {
       ],
     });
   }
-}
+};
+
+export const GET = withX402(handler, process.env.WALLET_ADDRESS as `0x${string}`, {
+  price: "$0.10",
+  network: "base",
+  config: { description: "Whale Alert - EVM chains" },
+});

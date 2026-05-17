@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { withX402 } from "x402-next";
 
-export async function GET() {
+const handler = async (_req: NextRequest) => {
   try {
     const res = await fetch(
       "https://api.nansen.ai/v2/transactions?chain=solana&min_usd=100000",
@@ -27,4 +28,14 @@ export async function GET() {
       ],
     });
   }
-}
+};
+
+export const GET = withX402(
+  handler,
+  process.env.SOLANA_WALLET_ADDRESS as `0x${string}`,
+  {
+    price: "$0.10",
+    network: "solana",
+    config: { description: "Whale Alert - Solana" },
+  }
+);

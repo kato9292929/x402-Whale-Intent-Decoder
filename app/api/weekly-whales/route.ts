@@ -1,19 +1,18 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { kv } from "@vercel/kv";
+import { withX402 } from "x402-next";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-export async function GET() {
+const handler = async (_req: NextRequest) => {
   const cacheKey = "weekly-whales-v1";
 
-  // Check KV cache
   try {
     const cached = await kv.get(cacheKey);
     if (cached) return NextResponse.json(cached);
   } catch {}
 
-  // Fetch top whale movements
   let transactions: Record<string, unknown>[] = [];
   try {
     const res = await fetch(
@@ -26,7 +25,6 @@ export async function GET() {
     }
   } catch {}
 
-  // Mock data if Nansen unavailable
   if (!transactions.length) {
     transactions = Array.from({ length: 10 }, (_, i) => ({
       txHash: `0xmock${i}`,
@@ -38,7 +36,6 @@ export async function GET() {
     }));
   }
 
-  // Decode each with Claude
   const decoded = await Promise.all(
     transactions.slice(0, 10).map(async (tx) => {
       try {
@@ -69,10 +66,19 @@ export async function GET() {
     whales: decoded,
   };
 
-  // Cache 24h
   try {
     await kv.set(cacheKey, result, { ex: 86400 });
   } catch {}
 
   return NextResponse.json(result);
-}
+};
+
+export const GET = withX402(
+  handler,
+  process.env.WALLET_ADDRESS as `0x${string}`,
+  {
+    price: "$0.50",
+    network: "base",
+    config: { description: "Weekly Whale Report" },
+  }
+);
