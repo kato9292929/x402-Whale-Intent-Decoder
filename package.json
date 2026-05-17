@@ -1,0 +1,36 @@
+{
+  "name": "x402-whale-intent-decoder",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "15.3.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "tailwindcss": "^3.4.1",
+    "autoprefixer": "^10.0.1",
+    "postcss": "^8",
+    "x402-next": "latest",
+    "@anthropic-ai/sdk": "^0.52.0",
+    "@vercel/kv": "^3.0.0",
+    "wagmi": "^2.0.0",
+    "viem": "^2.0.0",
+    "@rainbow-me/rainbowkit": "^2.0.0",
+    "@tanstack/react-query": "^5.0.0",
+    "@solana/wallet-adapter-react": "^0.15.35",
+    "@solana/wallet-adapter-react-ui": "^0.9.35",
+    "@solana/wallet-adapter-phantom": "^0.9.24",
+    "@solana/wallet-adapter-backpack": "^0.1.13",
+    "@solana/wallet-adapter-base": "^0.9.23",
+    "@solana/web3.js": "^1.98.0"
+  }
+}
