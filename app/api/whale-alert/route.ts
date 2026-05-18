@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withX402 } from "x402-next";
 
+const FALLBACK_EVM = "0x0000000000000000000000000000000000000001" as `0x${string}`;
+
 const handler = async (req: NextRequest) => {
   const chain = req.nextUrl.searchParams.get("chain") || "base";
 
@@ -32,7 +34,9 @@ const handler = async (req: NextRequest) => {
   }
 };
 
-export const GET = withX402(handler, process.env.WALLET_ADDRESS as `0x${string}`, {
+const payTo = ((process.env.WALLET_ADDRESS || FALLBACK_EVM) as `0x${string}`);
+
+export const GET = withX402(handler, payTo, {
   price: "$0.10",
   network: "base",
   config: { description: "Whale Alert - EVM chains" },

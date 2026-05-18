@@ -3,6 +3,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import { kv } from "@vercel/kv";
 import { withX402 } from "x402-next";
 
+const FALLBACK_EVM = "0x0000000000000000000000000000000000000001" as `0x${string}`;
+
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const handler = async (_req: NextRequest) => {
@@ -73,12 +75,10 @@ const handler = async (_req: NextRequest) => {
   return NextResponse.json(result);
 };
 
-export const GET = withX402(
-  handler,
-  process.env.WALLET_ADDRESS as `0x${string}`,
-  {
-    price: "$0.50",
-    network: "base",
-    config: { description: "Weekly Whale Report" },
-  }
-);
+const payTo = ((process.env.WALLET_ADDRESS || FALLBACK_EVM) as `0x${string}`);
+
+export const GET = withX402(handler, payTo, {
+  price: "$0.50",
+  network: "base",
+  config: { description: "Weekly Whale Report" },
+});

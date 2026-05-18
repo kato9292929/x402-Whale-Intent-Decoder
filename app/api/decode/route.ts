@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { withX402 } from "x402-next";
 
+const FALLBACK_EVM = "0x0000000000000000000000000000000000000001" as `0x${string}`;
+
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
@@ -76,12 +78,10 @@ ${historyText}`,
   return NextResponse.json(result);
 };
 
-export const POST = withX402(
-  handler,
-  process.env.WALLET_ADDRESS as `0x${string}`,
-  {
-    price: "$0.30",
-    network: "base",
-    config: { description: "Whale Intent Decode" },
-  }
-);
+const payTo = ((process.env.WALLET_ADDRESS || FALLBACK_EVM) as `0x${string}`);
+
+export const POST = withX402(handler, payTo, {
+  price: "$0.30",
+  network: "base",
+  config: { description: "Whale Intent Decode" },
+});
