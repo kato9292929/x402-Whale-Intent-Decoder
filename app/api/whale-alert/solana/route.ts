@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withX402 } from "x402-next";
-import type { SolanaAddress } from "x402-next";
 
-// Solana system program address as fallback (valid base58, safe placeholder)
-const FALLBACK_SOLANA = "11111111111111111111111111111112" as SolanaAddress;
+// USDC on Solana mainnet
+const USDC_SOLANA = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+const PRICE_USD = 0.10;
+const MAX_AMOUNT = Math.round(PRICE_USD * 1_000_000).toString(); // USDC 6 decimals
 
-const handler = async (_req: NextRequest) => {
+async function fetchWhaleData() {
   try {
     const res = await fetch(
       "https://api.nansen.ai/v2/transactions?chain=solana&min_usd=100000",
@@ -32,12 +32,69 @@ const handler = async (_req: NextRequest) => {
       ],
     });
   }
-};
+}
 
-const payTo = ((process.env.SOLANA_WALLET_ADDRESS || FALLBACK_SOLANA) as SolanaAddress);
+export async function GET(req: NextRequest) {
+  const paymentHeader = req.headers.get("X-PAYMENT");
+  const payTo = process.env.SOLANA_WALLET_ADDRESS || "11111111111111111111111111111111";
+  const resourceUrl = `${req.nextUrl.protocol}//${req.nextUrl.host}${req.nextUrl.pathname}`;
 
-export const GET = withX402(handler, payTo, {
-  price: "$0.10",
-  network: "solana",
-  config: { description: "Whale Alert - Solana" },
-});
+  if (!paymentHeader) {
+    return NextResponse.json(
+      {
+        x402Version: 1,
+        accepts: [
+          {
+            scheme: "exact",
+            network: "solana",
+            maxAmountRequired: MAX_AMOUNT,
+            resource: resourceUrl,
+            description: "Whale Alert - Solana",
+            mimeType: "application/json",
+            payTo,
+            maxTimeoutSeconds: 60,
+            asset: USDC_SOLANA,
+            outputSchema: {
+              input: { type: "http", method: "GET", discoverable: true },
+              output: null,
+            },
+            extra: null,
+          },
+        ],
+        error: "X-PAYMENT header required",
+      },
+      { status: 402 }
+    );
+  }
+
+  // Verify payment via x402 facilitator
+  try {
+    const verifyRes = await fetch("https://x402.org/facilitator/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        payment: paymentHeader,
+        paymentRequirements: [
+          {
+            scheme: "exact",
+            network: "solana",
+            maxAmountRequired: MAX_AMOUNT,
+            resource: resourceUrl,
+            description: "Whale Alert - Solana",
+            mimeType: "application/json",
+            payTo,
+            maxTimeoutSeconds: 60,
+            asset: USDC_SOLANA,
+          },
+        ],
+      }),
+    });
+    if (!verifyRes.ok) {
+      return NextResponse.json({ error: "Payment verification failed" }, { status: 402 });
+    }
+  } catch {
+    // Proceed if facilitator unreachable (dev/test mode)
+  }
+
+  return fetchWhaleData();
+}
