@@ -7,6 +7,8 @@ const FALLBACK_EVM = "0x0000000000000000000000000000000000000001" as `0x${string
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6";
+
 const handler = async (_req: NextRequest) => {
   const cacheKey = "weekly-whales-v1";
 
@@ -42,7 +44,7 @@ const handler = async (_req: NextRequest) => {
     transactions.slice(0, 10).map(async (tx) => {
       try {
         const msg = await anthropic.messages.create({
-          model: "claude-sonnet-4-20250514",
+          model: ANTHROPIC_MODEL,
           max_tokens: 512,
           system: `You are an onchain behavior analyst. Return JSON only:
 {"intent":"EXIT_PREPARATION|POSITION_BUILDING|BRIDGE|ACCUMULATION|UNKNOWN","confidence":0.75,"reasoning_ja":"短い日本語","risk_level":"high|medium|low"}`,

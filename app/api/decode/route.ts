@@ -8,6 +8,8 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
+const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6";
+
 const handler = async (req: NextRequest) => {
   const body = await req.json();
   const { walletAddress, txHash, amount, fromChain, toChain } = body;
@@ -30,7 +32,7 @@ const handler = async (req: NextRequest) => {
     : "No historical data available.";
 
   const message = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: ANTHROPIC_MODEL,
     max_tokens: 1024,
     system: `You are an onchain behavior analyst. Analyze the wallet's transaction history and classify the intent of the latest large movement.
 
