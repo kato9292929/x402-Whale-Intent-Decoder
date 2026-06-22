@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { withX402 } from "x402-next";
+import { withX402 } from "@x402/next";
+import { x402Server } from "@/lib/x402";
 
 const FALLBACK_EVM = "0x0000000000000000000000000000000000000001" as `0x${string}`;
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
+
+const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6";
 
 const handler = async (req: NextRequest) => {
   const body = await req.json();
@@ -30,7 +33,7 @@ const handler = async (req: NextRequest) => {
     : "No historical data available.";
 
   const message = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: ANTHROPIC_MODEL,
     max_tokens: 1024,
     system: `You are an onchain behavior analyst. Analyze the wallet's transaction history and classify the intent of the latest large movement.
 
@@ -80,8 +83,19 @@ ${historyText}`,
 
 const payTo = ((process.env.WALLET_ADDRESS || FALLBACK_EVM) as `0x${string}`);
 
-export const POST = withX402(handler, payTo, {
-  price: "$0.30",
-  network: "base",
-  config: { description: "Whale Intent Decode" },
-});
+export const POST = withX402(
+  handler,
+  {
+    accepts: [
+      {
+        scheme: "exact",
+        price: "$0.30",
+        network: "eip155:8453",
+        payTo,
+      },
+    ],
+    description: "Whale Intent Decode",
+    mimeType: "application/json",
+  },
+  x402Server
+);

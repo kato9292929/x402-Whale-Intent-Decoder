@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { kv } from "@vercel/kv";
-import { withX402 } from "x402-next";
+import { withX402 } from "@x402/next";
+import { x402Server } from "@/lib/x402";
 
 const FALLBACK_EVM = "0x0000000000000000000000000000000000000001" as `0x${string}`;
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6";
 
 const handler = async (_req: NextRequest) => {
   const cacheKey = "weekly-whales-v1";
@@ -42,7 +45,7 @@ const handler = async (_req: NextRequest) => {
     transactions.slice(0, 10).map(async (tx) => {
       try {
         const msg = await anthropic.messages.create({
-          model: "claude-sonnet-4-20250514",
+          model: ANTHROPIC_MODEL,
           max_tokens: 512,
           system: `You are an onchain behavior analyst. Return JSON only:
 {"intent":"EXIT_PREPARATION|POSITION_BUILDING|BRIDGE|ACCUMULATION|UNKNOWN","confidence":0.75,"reasoning_ja":"短い日本語","risk_level":"high|medium|low"}`,
@@ -77,8 +80,19 @@ const handler = async (_req: NextRequest) => {
 
 const payTo = ((process.env.WALLET_ADDRESS || FALLBACK_EVM) as `0x${string}`);
 
-export const GET = withX402(handler, payTo, {
-  price: "$0.50",
-  network: "base",
-  config: { description: "Weekly Whale Report" },
-});
+export const GET = withX402(
+  handler,
+  {
+    accepts: [
+      {
+        scheme: "exact",
+        price: "$0.50",
+        network: "eip155:8453",
+        payTo,
+      },
+    ],
+    description: "Weekly Whale Report",
+    mimeType: "application/json",
+  },
+  x402Server
+);
