@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { withX402 } from "x402-next";
+import { withX402 } from "@x402/next";
+import { x402Server } from "@/lib/x402";
 
 const FALLBACK_EVM = "0x0000000000000000000000000000000000000001" as `0x${string}`;
 
@@ -82,8 +83,19 @@ ${historyText}`,
 
 const payTo = ((process.env.WALLET_ADDRESS || FALLBACK_EVM) as `0x${string}`);
 
-export const POST = withX402(handler, payTo, {
-  price: "$0.30",
-  network: "base",
-  config: { description: "Whale Intent Decode" },
-});
+export const POST = withX402(
+  handler,
+  {
+    accepts: [
+      {
+        scheme: "exact",
+        price: "$0.30",
+        network: "eip155:8453",
+        payTo,
+      },
+    ],
+    description: "Whale Intent Decode",
+    mimeType: "application/json",
+  },
+  x402Server
+);

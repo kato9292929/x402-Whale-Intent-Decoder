@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { kv } from "@vercel/kv";
-import { withX402 } from "x402-next";
+import { withX402 } from "@x402/next";
+import { x402Server } from "@/lib/x402";
 
 const FALLBACK_EVM = "0x0000000000000000000000000000000000000001" as `0x${string}`;
 
@@ -79,8 +80,19 @@ const handler = async (_req: NextRequest) => {
 
 const payTo = ((process.env.WALLET_ADDRESS || FALLBACK_EVM) as `0x${string}`);
 
-export const GET = withX402(handler, payTo, {
-  price: "$0.50",
-  network: "base",
-  config: { description: "Weekly Whale Report" },
-});
+export const GET = withX402(
+  handler,
+  {
+    accepts: [
+      {
+        scheme: "exact",
+        price: "$0.50",
+        network: "eip155:8453",
+        payTo,
+      },
+    ],
+    description: "Weekly Whale Report",
+    mimeType: "application/json",
+  },
+  x402Server
+);
